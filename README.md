@@ -1,2 +1,2 @@
 # MonkeyTrain
-a Cognitive Training Web-Application.
+a Cognitive Chimp Test game that trains short-term memory
