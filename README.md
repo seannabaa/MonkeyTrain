@@ -9,19 +9,19 @@ MonkeyTrain is a short memory game built in Python using Pygame. The game demons
 The goal is to help users improve short-term number recall through fast pattern recognition. The target audience for a variety of people, including middle-school and high school students, adults, and older people.
 
 **Version History**
-0.5 - Prototype
+
+*0.5 - Prototype*
 - A rough outline of MonkeyTrain
-- Includes a start game screen, 3x3 grid generation, difficulty logic
+- Includes a start game screen, 3x3 grid generation, and difficulty logic
 - Unpolished visuals
 
-1.0 - Beta Version
+*1.0 - Beta Version*
 - Updated the User Interface to make it more aesthetically pleasing
 - created a "Controls and Help" feature that demonstrates the game's mechanics, controls, and difficulty progression
 - Controls & Help will also have Pro Tips and advice
 
 
 **Software**
-
 - Python
 - Pygame Library
 
@@ -33,5 +33,5 @@ The goal is to help users improve short-term number recall through fast pattern 
 **Inspiration**
 - Human Benchmark
 - Lumosity
-- "Chimp outperform humans at memory task" By New Scientist on YouTube
+- "Chimp outperforms humans at memory task" By New Scientist on YouTube
 
