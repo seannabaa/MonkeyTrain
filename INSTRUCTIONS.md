@@ -150,5 +150,6 @@ Step 1: Install Python
 
 --
 
-## 🎮 You're Ready!
-Once you see the MonkeyTrain game window with the main menu, you're all set!
+## You're Ready!
+Once you see the MonkeyTrain game window with the main menu, you're all set. 
+Have fun, and keep your brain sharp!
