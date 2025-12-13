@@ -13,15 +13,21 @@ The goal is to help users improve short-term number recall through fast pattern 
 
 ## **Version History**
 
-### *0.5 - Prototype*
+### *0.5 - Prototype (11/19)* 
 - A rough outline of MonkeyTrain
 - Includes a start game screen, 3x3 grid generation, and difficulty logic
-- Unpolished visuals
+- Rough Work of Visuals done, got a main idea down of the function and logic
+- Click Detection is still bugged, and time is very short
 
-### *1.0 - Beta Version*
-- Updated the User Interface to make it more aesthetically pleasing
-- created a "Controls and Help" feature that demonstrates the game's mechanics, controls, and difficulty progression
-- Controls & Help will also have Pro Tips and advice
+### *1.0 - Beta Version Update (12/12)*
+- Updated the User Interface to make it more aesthetically pleasing.
+- created a "Controls and Help" feature that demonstrates the game's mechanics, controls, and difficulty progression.
+- Controls & Help will also have Pro Tips and advice.
+- Added 'Dark Mode' Feature that allows users to switch from normal UI colours to darker UI colours,
+- Longer and adjusted time periods make it easier for the beginner stages to remember the n x m grid given.
+- Overall revamped from the Prototype.
+
+Your Criticism is needed! Please help me with this project. I hope to learn more every day while I build this cool project.
 
 ---
 
