@@ -147,3 +147,8 @@ Step 1: Install Python
    python3 monkeytrain.py
    ```
 4. The game window should appear!
+
+--
+
+## 🎮 You're Ready!
+Once you see the MonkeyTrain game window with the main menu, you're all set!
