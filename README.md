@@ -49,7 +49,11 @@ Your Criticism is needed! Please help me with this project. I plan to learn more
 
 ---
 ## ** Project Structure + File Descriptions  **
+
+*File Breakdown*
 - main.py is the main application, containing the main game loop of game development: processing user events, such as mouse clicks, updating the game state, and creating frames to the screen. I structured this game at 60 frames per second (FPS) to ensure smooth transitions between the menu and the gameplay.
+
+*Themes and Global configuration*
 - In the main.py, all colours for light and dark mode and their colour palettes.
 - I used a theme injection approach, where every rendering function references  ```current_theme['key']```, allowing for ga lobal dark mode toggle that updates the entire UI instantly without restarting the game loop. 
 - I defined variables like  ```TILE_SIZE```, ```TILE_GAP```, and ```ANIMATION_SPEED``` at the global level, ensuring the game's "Feel" and difficulty can be tuned in one location.
@@ -68,6 +72,12 @@ Your Criticism is needed! Please help me with this project. I plan to learn more
   - Tier 1 (Easy, Start of game) 3x3 grid, 10 seconds of time
   - Tier 2 (Intermediate) 4x4 grid, -0.3 seconds of time
   - Tier 3 (Expert), 5x5 grid, less time than intermediate, ensuring the game remains challenging for advanced players.
+---
+## **Design Choices**
+
+- I used a single file architecture for ```main.py``` to simplify the end-user experience. A user only needs to download one script to play, compensating for the lack of files using exenstive block comments and a functional programming style to keep the code readable.
+- One challenge was "ghost clicks", where a single click from a mouse would wrongly register. I solved this using the ```pygame.event.get()``` queue instead to ensure that each click is processed exactly once per number frame.
+
 ---
 
 ## **Inspiration**
