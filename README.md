@@ -12,7 +12,7 @@ The goal is to help users improve short-term number recall through fast pattern 
 
 ---
 ## **Video Demo**
-(WILL BE POSTED SOON)
+https://youtu.be/l47QNu3MEYA 
 --- 
 
 ## **Version History**
