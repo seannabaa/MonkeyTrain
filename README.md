@@ -12,8 +12,9 @@ The goal is to help users improve short-term number recall through fast pattern 
 
 ---
 ## **Video Demo**
-
+(WILL BE POSTED SOON)
 --- 
+
 ## **Version History**
 
 ### *0.5 - Prototype (11/19)* 
@@ -30,9 +31,10 @@ The goal is to help users improve short-term number recall through fast pattern 
 - Longer and adjusted time periods make it easier for the beginner stages to remember the n x m grid given.
 - Overall revamped from the Prototype.
 
-Your Criticism is needed! Please help me with this project. I hope to learn more every day while I build this cool project.
+Your Criticism is needed! Please help me with this project. I plan to learn more every day while I build this cool project.
 
 ---
+
 
 ## **Software**
 - Python
@@ -46,11 +48,29 @@ Your Criticism is needed! Please help me with this project. I hope to learn more
 - Linux (Ubuntu 20.04+ or equivalent)
 
 ---
+## ** Project Structure + File Descriptions  **
+- main.py is the main application, containing the main game loop of game development: processing user events, such as mouse clicks, updating the game state, and creating frames to the screen. I structured this game at 60 frames per second (FPS) to ensure smooth transitions between the menu and the gameplay.
+- In the main.py, all colours for light and dark mode and their colour palettes.
+- I used a theme injection approach, where every rendering function references  ```current_theme['key']```, allowing for ga lobal dark mode toggle that updates the entire UI instantly without restarting the game loop. 
+- I defined variables like  ```TILE_SIZE```, ```TILE_GAP```, and ```ANIMATION_SPEED``` at the global level, ensuring the game's "Feel" and difficulty can be tuned in one location.
+
+*Program Sound Generation*
+- One challenge I ran through was the ```generate_sound``` function. I wanted the game to be entirely self-contained without requiring external ```.wav``` or ```.mp3``` files.
+- I utilized pygame.mixer to generate Square Waves Mathematically, calculating the ```wave_period``` based on a target frequency and fills a buffer with raw audio samples.
+
+*Grid/Coordinate Logic*
+- The logic for tile placement is handled by calculate_tile_positions:
+  - I used mathematical alignment, which centred a dynamic grid (changing from 3x3 to 4x4 to 5x5), requiring precise maths. I used the formula, *GridWidth = (Size x TileSize) + ((Size - 1) x Gap)*, allowing the grid to remain perfectly centred on a 1280 x 720 canvas.
+  - The ```get_tile_at_position``` function acts as a bridge between the user's mouse coordinates and the internal 2D list, iterating through the tile rectangles and returning the specific value clicked, enabling real-time validation.
+
+*Difficulty Progression System*
+- The ```get_difficulty_settings``` function acts as a game's balancer, using a tiered system:
+  - Tier 1 (Easy, Start of game) 3x3 grid, 10 seconds of time
+  - Tier 2 (Intermediate) 4x4 grid, -0.3 seconds of time
+  - Tier 3 (Expert), 5x5 grid, less time than intermediate, ensuring the game remains challenging for advanced players.
+---
 
 ## **Inspiration**
 - Human Benchmark
 - Lumosity
 - "Chimp outperforms humans at memory task" By New Scientist on YouTube
-
-
-TODO
