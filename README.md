@@ -84,3 +84,5 @@ Your Criticism is needed! Please help me with this project. I plan to learn more
 - Human Benchmark
 - Lumosity
 - "Chimp outperforms humans at memory task" By New Scientist on YouTube
+- Wordle
+- Connections
