@@ -17,13 +17,13 @@ https://youtu.be/l47QNu3MEYA
 
 ## **Version History**
 
-### *0.5 - Prototype (11/19)* 
+### *0.5 - Prototype (11/19/25)* 
 - A rough outline of MonkeyTrain
 - Includes a start game screen, 3x3 grid generation, and difficulty logic
 - Rough Work of Visuals done, got a main idea down of the function and logic
 - Click Detection is still bugged, and time is very short
 
-### *1.0 - Beta Version Update (12/12)*
+### *1.0 - Beta Version Update (12/12/25) - Github Released on (1/8/26)*
 - Updated the User Interface to make it more aesthetically pleasing.
 - created a "Controls and Help" feature that demonstrates the game's mechanics, controls, and difficulty progression.
 - Controls & Help will also have Pro Tips and advice.
