@@ -32,7 +32,7 @@ https://youtu.be/l47QNu3MEYA
 - Overall revamped from the Prototype.
 
 
-### *1.5.0 - Beta Version Update (1/17/26)
+### *1.5.0 - Beta Version Update (1/17/26)*
 - Updated the main user interface on the game screen: cleaner and larger UIs
 - More accessible with accessibility settings: Large Tiles, Extra Large Tiles, and Sound Effects
 - Sound effects are added, but still a work in progress
