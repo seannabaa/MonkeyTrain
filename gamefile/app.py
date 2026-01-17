@@ -12,13 +12,12 @@ pygame.mixer.init() # Initialize the mixer module for sound effects
 # GLOBAL CONSTANTS
 
 # Display Configuration
-
 WINDOW_WIDTH = 1280   # Main window width in pixels
 WINDOW_HEIGHT = 720   # Main window height in pixels
 
 
 # Color Theme Dictionaries
-# Two theme options for accessibility and user preference
+# Three theme options for accessibility and user preference
 # Each theme contains all color values used throughout the game
 
 LIGHT_THEME = {
@@ -47,17 +46,33 @@ DARK_THEME = {
     'button_hover': (50, 55, 70) # Darker button hover state
 }
 
+HIGH_CONTRAST_THEME = {
+    'background': (0, 0, 0), # Pure black background for maximum contrast
+    'tile_revealed': (160, 160, 160), # Light gray tiles (numbers visible)
+    'tile_hidden': (160, 160, 160), # Light gray tiles (numbers hidden)
+    'tile_clicked': (255, 200, 0), # Orange-yellow click feedback
+    'text_primary': (255, 255, 255), # Pure white text
+    'text_secondary': (255, 255, 255), # White secondary text
+    'success': (0, 255, 0), # Bright green for success
+    'failure': (255, 0, 0), # Bright red for failure
+    'button': (128, 128, 128), # Gray buttons
+    'button_hover': (200, 200, 200) # Light gray hover
+}
+
 
 # Game Configuration Constants
 MEMORIZATION_TIME = 10.0  # Base seconds to memorize grid (adjusted by difficulty)
-TILE_SIZE = 75 # Width and height of each grid tile in pixels
+TILE_SIZE_STANDARD = 75 # Standard tile width and height in pixels
+TILE_SIZE_LARGE = 110 # Large tile size for accessibility
+TILE_SIZE_EXTRA_LARGE = 150 # Extra large tile size for accessibility
 TILE_GAP = 10 # Space between tiles in pixels
-ANIMATION_SPEED = 5 # Transparency change per frame for fade effects
+ANIMATION_SPEED = 6 # Transparency change per frame for fade effects
 CLICK_DURATION = 300 # Milliseconds to show click feedback on tiles
+FADE_DURATION = 800 # Milliseconds for fade transitions between rounds
 
 
 # Font Initialization
-FONT_TITLE = pygame.font.SysFont("calibri", 48, bold=True)  # Game title, bolded
+FONT_TITLE = pygame.font.SysFont("calibri", 72, bold=True)  # Game title, bolded
 FONT_LARGE = pygame.font.SysFont("opensans", 36) # Tile numbers
 FONT_MEDIUM = pygame.font.SysFont("opensans", 28) # Section headers
 FONT_SMALL = pygame.font.SysFont("opensans", 24) # Instructions
@@ -76,15 +91,21 @@ pygame.display.set_caption("MonkeyTrain - Memory Training Game")
 
 # Active color theme (starts with light theme, can be toggled)
 current_theme = LIGHT_THEME.copy()
-# Flag tracking whether dark mode is currently enabled
-is_dark_mode_enabled = False
-# Flag controlling whether sound effects play (can be toggled in future versions)
+# Theme mode tracking: 0=Light, 1=Dark, 2=High Contrast
+theme_mode = 0
+
+# Accessibility settings
+use_large_tiles = False  # True = large tiles, False = standard tiles
+current_tile_size = TILE_SIZE_STANDARD  # Current active tile size
+
+# Sound effects enabled/disabled
 sound_effects_enabled = True
 
 # List storing recent tile clicks for visual feedback
 # Each entry is a tuple: (row_index, col_index, timestamp_ms)
 # Used to temporarily highlight clicked tiles
 click_animations = []
+
 
 # SOUND MANAGEMENT FUNCTIONS
 def generate_sound(frequency, duration):
@@ -113,24 +134,23 @@ def generate_sound(frequency, duration):
         # Calculate how many samples make up one complete wave cycle
         wave_period = int(sample_rate / frequency)
         
-        # Calculate maximum amplitude based on audio bit depth
-        # This prevents clipping and distortion
-        max_amplitude = 2 ** (abs(pygame.mixer.get_init()[1]) - 1) - 1
+        # Maximum amplitude for 16-bit signed integers
+        max_amplitude = 32767
         
-        # Generate square wave samples
-        audio_samples = []
-        for i in range(int(duration * sample_rate)):
+        # Generate square wave samples as bytes
+        num_samples = int(duration * sample_rate)
+        audio_bytes = bytearray()
+        
+        for i in range(num_samples):
             # Square wave formula: alternates between high and low values
-            # Creates the characteristic "beep" sound
-            sample = int(max_amplitude * ((i % wave_period) / wave_period - 0.5) * 2)
+            sample_value = int(max_amplitude * 0.3 * ((i % wave_period) / wave_period - 0.5) * 2)
             
-            # Add to both channels for stereo sound
-            audio_samples.append([sample, sample])
+            # Convert to 16-bit signed integer (little-endian) for both channels
+            audio_bytes.extend(sample_value.to_bytes(2, byteorder='little', signed=True))
+            audio_bytes.extend(sample_value.to_bytes(2, byteorder='little', signed=True))
         
-        # Create pygame Sound object from raw samples
-        sound = pygame.mixer.Sound(buffer=bytes(audio_samples))
-        
-        # Set volume to 30% to avoid being jarring
+        # Create pygame Sound object from raw bytes
+        sound = pygame.mixer.Sound(buffer=bytes(audio_bytes))
         sound.set_volume(0.3)
         
         return sound
@@ -170,12 +190,10 @@ def play_sound_effect(sound):
         - Gracefully handles cases where sound is None
         - Catches and ignores any playback errors to prevent crashes
     """
-    # Only play if user hasn't disabled sound effects
     if sound_effects_enabled and sound is not None:
         try:
-            sound.play()  # Non-blocking playback
+            sound.play()
         except Exception:
-            # Silently fail - sound is nice-to-have, not critical
             pass
 
 # =============================================================================
@@ -258,7 +276,7 @@ def draw_button(surface, text, x, y, width, height, font, is_hovered):
         pygame.Rect: The button's rectangle (for collision detection)
         
     Visual Design:
-        - Rounded corners (10px radius) for modern look
+        - Rounded corners (8px radius) for modern look
         - 2px border in text_primary color
         - Background color changes on hover
         - Text is automatically centered within button
@@ -270,10 +288,10 @@ def draw_button(surface, text, x, y, width, height, font, is_hovered):
     button_rect = pygame.Rect(x, y, width, height)
     
     # Draw filled button background with rounded corners
-    pygame.draw.rect(surface, button_color, button_rect, border_radius=10)
+    pygame.draw.rect(surface, button_color, button_rect, border_radius=8)
     
     # Draw button border (width=2 means outline only)
-    pygame.draw.rect(surface, current_theme['text_primary'], button_rect, 2, border_radius=10)
+    pygame.draw.rect(surface, current_theme['text_primary'], button_rect, 2, border_radius=8)
     
     # Render button text
     text_surface = font.render(text, True, current_theme['text_primary'])
@@ -349,23 +367,19 @@ def calculate_tile_positions(grid_size):
         list[list[tuple]]: 2D list where each element is (x, y, size)
                           - x: Left edge of tile in pixels
                           - y: Top edge of tile in pixels
-                          - size: Width/height of tile (same as TILE_SIZE)
+                          - size: Width/height of tile (uses current_tile_size)
                           
     Layout Algorithm:
         1. Calculate total grid dimensions including gaps
         2. Center the grid horizontally
         3. Center vertically with 40px downward offset for header
         4. Calculate each tile position accounting for gaps
-        
-    Example:
-        For a 3×3 grid with TILE_SIZE=75 and TILE_GAP=10:
-        Total width = 3*75 + 2*10 = 245 pixels
     """
     # Calculate total dimensions including gaps between tiles
     # Formula: (tiles × size) + (gaps × gap_size)
     # For 3 tiles: need 2 gaps between them
-    total_grid_width = grid_size * TILE_SIZE + (grid_size - 1) * TILE_GAP
-    total_grid_height = grid_size * TILE_SIZE + (grid_size - 1) * TILE_GAP
+    total_grid_width = grid_size * current_tile_size + (grid_size - 1) * TILE_GAP
+    total_grid_height = grid_size * current_tile_size + (grid_size - 1) * TILE_GAP
     
     # Center grid horizontally
     grid_start_x = (WINDOW_WIDTH - total_grid_width) // 2
@@ -379,11 +393,11 @@ def calculate_tile_positions(grid_size):
         row_positions = []
         for col in range(grid_size):
             # Position = start + (tile_index × (tile_size + gap))
-            tile_x = grid_start_x + col * (TILE_SIZE + TILE_GAP)
-            tile_y = grid_start_y + row * (TILE_SIZE + TILE_GAP)
+            tile_x = grid_start_x + col * (current_tile_size + TILE_GAP)
+            tile_y = grid_start_y + row * (current_tile_size + TILE_GAP)
             
             # Store as tuple: (x, y, size)
-            row_positions.append((tile_x, tile_y, TILE_SIZE))
+            row_positions.append((tile_x, tile_y, current_tile_size))
         positions.append(row_positions)
     
     return positions
@@ -460,7 +474,16 @@ def render_grid(grid, positions, show_numbers, transparency=255):
             # Render number on tile if in reveal mode
             if show_numbers:
                 number_text = str(grid[row][col])
-                text_surface = FONT_LARGE.render(number_text, True, 
+                
+                # Use larger font for large tiles
+                if current_tile_size >= TILE_SIZE_EXTRA_LARGE:
+                    number_font = pygame.font.SysFont("opensans", 48)
+                elif current_tile_size >= TILE_SIZE_LARGE:
+                    number_font = pygame.font.SysFont("opensans", 42)
+                else:
+                    number_font = FONT_LARGE
+                
+                text_surface = number_font.render(number_text, True, 
                                                 current_theme['text_primary'])
                 
                 # Apply same transparency to text as tile
@@ -558,28 +581,131 @@ def get_difficulty_settings(score):
         # Expert tier: Large grid, reduced time (but never below 3 seconds)
         return 5, max(MEMORIZATION_TIME - 0.5, 3.0)
 
-def toggle_theme():
+def cycle_theme():
     """
-    Switch between light and dark visual themes.
+    Cycle through theme modes: Light -> Dark -> High Contrast -> Light
     
     Updates the global theme state and applies the new color scheme.
     This function is called when the user presses 'D' or clicks the
     theme toggle button.
     
     Global Variables Modified:
-        - is_dark_mode_enabled: Flipped to opposite state
+        - theme_mode: Cycles through 0, 1, 2 (Light, Dark, High Contrast)
         - current_theme: Updated with new theme colors
         
     Returns:
         None
     """
-    global is_dark_mode_enabled, current_theme
+    global theme_mode, current_theme
     
     # Toggle the flag
-    is_dark_mode_enabled = not is_dark_mode_enabled
+    theme_mode = (theme_mode + 1) % 3
     
     # Apply the appropriate theme (using copy to avoid reference issues)
-    current_theme = DARK_THEME.copy() if is_dark_mode_enabled else LIGHT_THEME.copy()
+    if theme_mode == 0:
+        current_theme = LIGHT_THEME.copy()
+    elif theme_mode == 1:
+        current_theme = DARK_THEME.copy()
+    else:
+        current_theme = HIGH_CONTRAST_THEME.copy()
+
+def toggle_large_tiles():
+    """
+    Toggle between standard and large tile sizes.
+    
+    Global Variables Modified:
+        - use_large_tiles: Flipped to opposite state
+        - current_tile_size: Updated with new tile size
+        
+    Returns:
+        None
+    """
+    global use_large_tiles, current_tile_size
+    
+    use_large_tiles = not use_large_tiles
+    
+    if use_large_tiles:
+        current_tile_size = TILE_SIZE_LARGE
+    else:
+        current_tile_size = TILE_SIZE_STANDARD
+
+def set_extra_large_tiles(enabled):
+    """
+    Enable or disable extra large tile size.
+    
+    Functions:
+        enabled (bool): True for extra large, False for standard/large
+    
+    Global Variables Modified:
+        - current_tile_size: Updated with new tile size
+        
+    Returns:
+        None
+    """
+    global current_tile_size
+    
+    if enabled:
+        current_tile_size = TILE_SIZE_EXTRA_LARGE
+    else:
+        toggle_large_tiles()
+
+# FADE ANIMATION HELPERS
+
+def fade_in_screen():
+    """
+    Fade in the entire screen from black when pygame initializes.
+    
+    This creates a smooth entrance animation for the game.
+    
+    Returns:
+        None
+    """
+    clock = pygame.time.Clock()
+    fade_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+    
+    # Fade from black to transparent over approximately 500ms
+    for alpha in range(255, 0, -ANIMATION_SPEED * 2):
+        fade_surface.set_alpha(alpha)
+        fade_surface.fill((0, 0, 0))
+        display.blit(fade_surface, (0, 0))
+        pygame.display.update()
+        clock.tick(60)
+
+def fade_transition(duration_ms=500):
+    """
+    Smooth fade transition between game states.
+    
+    Creates a fade-to-black then fade-from-black effect for smooth transitions
+    between rounds or game states.
+    
+    Functions:
+        duration_ms (int): Duration of fade in milliseconds
+        
+    Returns:
+        None
+    """
+    clock = pygame.time.Clock()
+    fade_surface = pygame.Surface((WINDOW_WIDTH, WINDOW_HEIGHT))
+    frames = max(1, duration_ms // 16)  # ~60 FPS
+    
+    # Fade to black
+    for alpha in range(0, 255, 255 // frames):
+        fade_surface.set_alpha(alpha)
+        fade_surface.fill((0, 0, 0))
+        display.blit(fade_surface, (0, 0))
+        pygame.display.update()
+        clock.tick(60)
+    
+    # Hold black briefly
+    pygame.time.delay(100)
+    
+    # Fade from black
+    for alpha in range(255, 0, -255 // frames):
+        fade_surface.set_alpha(alpha)
+        fade_surface.fill((0, 0, 0))
+        display.blit(fade_surface, (0, 0))
+        pygame.display.update()
+        clock.tick(60)
 
 # =============================================================================
 # GAME ROUND LOGIC
@@ -596,6 +722,10 @@ def execute_game_round(grid_size, reveal_duration):
     - Testing phase (hidden numbers, player clicks)
     - Input validation
     - Win/loss determination
+        
+    Functions:
+        grid_size (int): Grid dimensions (creates size × size grid)
+        reveal_duration (float): Seconds to show numbers for memorization
         
     Returns:
         bool: True if player completed sequence correctly
@@ -614,7 +744,7 @@ def execute_game_round(grid_size, reveal_duration):
         - Uses pygame event system for user input
         - Tracks elapsed time with pygame.time.get_ticks()
         - Validates clicks in real-time for immediate feedback
-        - Supports ESC (menu) and D (dark mode) at any time
+        - Supports ESC (menu) and D (theme toggle) at any time
     """
     global click_animations
     
@@ -651,12 +781,13 @@ def execute_game_round(grid_size, reveal_duration):
     # Fade In Animation
     # Gradually increase opacity from 0 to 255 for smooth appearance
     
-    for alpha in range(0, 255, ANIMATION_SPEED * 2):
+    clock = pygame.time.Clock()
+    for alpha in range(0, 255, ANIMATION_SPEED):
         # Clear screen
         display.fill(current_theme['background'])
         
         # Draw header
-        render_text_centered(display, "MonkeyTrain", 30, FONT_TITLE, 
+        render_text_centered(display, "MonkeyTrain", 10, FONT_TITLE, 
                            current_theme['text_primary'])
         render_text_centered(display, 
                            "Memorize the positions, then click in order: 1, 2, 3...", 
@@ -668,8 +799,8 @@ def execute_game_round(grid_size, reveal_duration):
         # Update display
         pygame.display.update()
         
-        # Small delay for smooth animation (10ms per frame)
-        pygame.time.delay(10)
+        # Small delay for smooth animation (target 60 FPS)
+        clock.tick(60)
     
     # -------------------------------------------------------------------------
     # Main Round Loop
@@ -681,7 +812,7 @@ def execute_game_round(grid_size, reveal_duration):
         display.fill(current_theme['background'])
         
         # Header (shown in all phases)
-        render_text_centered(display, "MonkeyTrain", 30, FONT_TITLE, 
+        render_text_centered(display, "MonkeyTrain", 10, FONT_TITLE, 
                            current_theme['text_primary'])
         render_text_centered(display, 
                            "Memorize the positions, then click in order: 1, 2, 3...", 
@@ -709,6 +840,18 @@ def execute_game_round(grid_size, reveal_duration):
             # Check if memorization time has elapsed
             if elapsed >= reveal_duration:
                 is_revealing_numbers = False  # Transition to testing phase
+                
+                # Smooth transition: fade out numbers
+                for alpha in range(255, 0, -ANIMATION_SPEED * 3):
+                    display.fill(current_theme['background'])
+                    render_text_centered(display, "MonkeyTrain", 10, FONT_TITLE, 
+                                       current_theme['text_primary'])
+                    render_text_centered(display, 
+                                       "Memorize the positions, then click in order: 1, 2, 3...", 
+                                       80, FONT_SMALL, current_theme['text_secondary'])
+                    render_grid(grid, tile_positions, show_numbers=True, transparency=alpha)
+                    pygame.display.update()
+                    clock.tick(60)
         
         # Phase 2: Testing (Click Phase)
         else:
@@ -721,7 +864,7 @@ def execute_game_round(grid_size, reveal_duration):
             render_grid(grid, tile_positions, show_numbers=False)
         
         # Footer Controls (shown in all phases)
-        render_text_centered(display, "ESC: Menu | D: Dark Mode", 
+        render_text_centered(display, "ESC: Menu | D: Theme Toggle", 
                            WINDOW_HEIGHT - 35, FONT_TINY, 
                            current_theme['text_secondary'])
         
@@ -742,8 +885,8 @@ def execute_game_round(grid_size, reveal_duration):
                     # ESC pressed - return to menu
                     return None
                 elif event.key == pygame.K_d:
-                    # D pressed - toggle dark mode
-                    toggle_theme()
+                    # D pressed - cycle theme
+                    cycle_theme()
             
             # Mouse clicks (only processed during testing phase)
             if event.type == pygame.MOUSEBUTTONDOWN and not is_revealing_numbers:
@@ -784,6 +927,105 @@ def execute_game_round(grid_size, reveal_duration):
 # MENU SCREENS
 # =============================================================================
 
+def display_settings_menu():
+    """
+    Display accessibility settings menu.
+    
+    Allows players to configure accessibility options including:
+    - High contrast mode toggle
+    - Large and extra large tile sizes
+    - Sound effects toggle
+    
+    Returns:
+        None (returns to menu when back button clicked or ESC pressed)
+    """
+    global current_tile_size, use_large_tiles, sound_effects_enabled
+    
+    clock = pygame.time.Clock()
+    
+    while True:
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        display.fill(current_theme['background'])
+        
+        render_text_centered(display, "Accessibility Settings", 60, FONT_TITLE, current_theme['text_primary'])
+        
+        button_width, button_height = 320, 50
+        button_x = (WINDOW_WIDTH - button_width) // 2
+        
+        y_pos = 300
+
+        # High Contrast Mode button
+        hc_text = f"High Contrast Mode: {'ON' if theme_mode == 2 else 'OFF'}"
+        hc_hover = (button_x <= mouse_x <= button_x + button_width and y_pos <= mouse_y <= y_pos + button_height)
+        hc_btn = draw_button(display, hc_text, button_x, y_pos, button_width, button_height, FONT_MEDIUM, hc_hover)
+        
+        y_pos += 65
+        
+        # Large Tiles button
+        large_text = f"Large Tiles: {'ON' if use_large_tiles else 'OFF'}"
+        large_hover = (button_x <= mouse_x <= button_x + button_width and y_pos <= mouse_y <= y_pos + button_height)
+        large_btn = draw_button(display, large_text, button_x, y_pos, button_width, button_height, FONT_MEDIUM, large_hover)
+        
+        y_pos += 65
+        
+        # Extra Large Tiles button
+        xlarge_text = f"Extra Large Tiles: {'ON' if current_tile_size == TILE_SIZE_EXTRA_LARGE else 'OFF'}"
+        xlarge_hover = (button_x <= mouse_x <= button_x + button_width and y_pos <= mouse_y <= y_pos + button_height)
+        xlarge_btn = draw_button(display, xlarge_text, button_x, y_pos, button_width, button_height, FONT_MEDIUM, xlarge_hover)
+        
+        y_pos += 65
+        
+        # Sound Effects button
+        sound_text = f"Sound Effects: {'ON' if sound_effects_enabled else 'OFF'}"
+        sound_hover = (button_x <= mouse_x <= button_x + button_width and y_pos <= mouse_y <= y_pos + button_height)
+        sound_btn = draw_button(display, sound_text, button_x, y_pos, button_width, button_height, FONT_MEDIUM, sound_hover)
+        
+        y_pos += 90
+        
+        # Back button
+        back_hover = (button_x <= mouse_x <= button_x + button_width and y_pos <= mouse_y <= y_pos + button_height)
+        back_btn = draw_button(display, "Back to Menu", button_x, y_pos, button_width, button_height, FONT_MEDIUM, back_hover)
+        
+        render_text_centered(display, "Press ESC to return to menu", 
+                           WINDOW_HEIGHT - 30, FONT_TINY, current_theme['text_secondary'])
+        
+        pygame.display.update()
+        clock.tick(60)
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                return
+            
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    return
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if hc_btn.collidepoint(mouse_x, mouse_y):
+                    cycle_theme()
+                    play_sound_effect(sound_click)
+                elif large_btn.collidepoint(mouse_x, mouse_y):
+                    if current_tile_size == TILE_SIZE_EXTRA_LARGE:
+                        current_tile_size = TILE_SIZE_STANDARD
+                        use_large_tiles = False
+                    else:
+                        toggle_large_tiles()
+                    play_sound_effect(sound_click)
+                elif xlarge_btn.collidepoint(mouse_x, mouse_y):
+                    if current_tile_size == TILE_SIZE_EXTRA_LARGE:
+                        current_tile_size = TILE_SIZE_STANDARD
+                        use_large_tiles = False
+                    else:
+                        set_extra_large_tiles(True)
+                        use_large_tiles = True
+                    play_sound_effect(sound_click)
+                elif sound_btn.collidepoint(mouse_x, mouse_y):
+                    sound_effects_enabled = not sound_effects_enabled
+                    play_sound_effect(sound_click)
+                elif back_btn.collidepoint(mouse_x, mouse_y):
+                    play_sound_effect(sound_click)
+                    return
+
 def display_start_menu():
     """
     Display the main menu screen with game instructions and options.
@@ -791,7 +1033,7 @@ def display_start_menu():
     This is the first screen players see. It provides:
     - Game title and description
     - How to play instructions
-    - Navigation buttons (Start, Help, Theme Toggle)
+    - Navigation buttons (Start, Help, Settings, Theme Toggle)
     - Keyboard shortcuts
              
     Menu Loop:
@@ -802,6 +1044,9 @@ def display_start_menu():
         
     Navigation:
         User can click buttons or close window to quit
+        
+    Returns:
+        str: 'play', 'help', or None if quit
     """
     clock = pygame.time.Clock()
     
@@ -816,7 +1061,7 @@ def display_start_menu():
         # ---------------------------------------------------------------------
         # Title Section
         # ---------------------------------------------------------------------
-        render_text_centered(display, "MonkeyTrain", 100, FONT_TITLE, 
+        render_text_centered(display, "MonkeyTrain", 65, FONT_TITLE, 
                            current_theme['text_primary'])
         render_text_centered(display, "A Memory Training Game", 165, FONT_MEDIUM, 
                            current_theme['text_secondary'])
@@ -826,7 +1071,6 @@ def display_start_menu():
         # ---------------------------------------------------------------------
         instructions = [
             "How to Play:",
-            "",  # Empty line for spacing
             "1. Watch as numbers appear on the grid",
             "2. Memorize all number positions",
             "3. Click tiles in order: (1, 2, 3, ... n)",
@@ -850,20 +1094,26 @@ def display_start_menu():
         # Start Game Button
         play_hover = (button_x <= mouse_x <= button_x + button_width and 
                      420 <= mouse_y <= 470)
-        play_btn = draw_button(display, "Start Game", button_x, 420, 
+        play_btn = draw_button(display, "Start Game", button_x, 400, 
                               button_width, button_height, FONT_MEDIUM, play_hover)
         
         # Controls & Help Button
         help_hover = (button_x <= mouse_x <= button_x + button_width and 
-                     485 <= mouse_y <= 535)
-        help_btn = draw_button(display, "Controls & Help", button_x, 485, 
+                     465 <= mouse_y <= 535)
+        help_btn = draw_button(display, "Controls & Help", button_x, 465, 
                               button_width, button_height, FONT_MEDIUM, help_hover)
         
-        # Dark Mode Toggle Button
+        # Accessibility Settings Button
+        settings_hover = (button_x <= mouse_x <= button_x + button_width and 
+                         530 <= mouse_y <= 600)
+        settings_btn = draw_button(display, "Accessibility Settings", button_x, 530, 
+                                   button_width, button_height, FONT_MEDIUM, settings_hover)
+        
+        # Theme Toggle Button
         theme_hover = (button_x <= mouse_x <= button_x + button_width and 
-                      550 <= mouse_y <= 600)
-        theme_text = f"Dark Mode: {'ON' if is_dark_mode_enabled else 'OFF'}"
-        theme_btn = draw_button(display, theme_text, button_x, 550, 
+                      595 <= mouse_y <= 665)
+        theme_text = f"Theme: {['Light', 'Dark', 'High Contrast'][theme_mode]}"
+        theme_btn = draw_button(display, theme_text, button_x, 595, 
                                button_width, button_height, FONT_MEDIUM, theme_hover)
         
         # ---------------------------------------------------------------------
@@ -896,9 +1146,12 @@ def display_start_menu():
                 elif help_btn.collidepoint(mouse_x, mouse_y):
                     play_sound_effect(sound_click)
                     return 'help'  # Show help screen
-                elif theme_btn.collidepoint(mouse_x, mouse_y):
+                elif settings_btn.collidepoint(mouse_x, mouse_y):
                     play_sound_effect(sound_click)
-                    toggle_theme()  # Toggle theme (stays on menu)
+                    display_settings_menu()
+                elif theme_btn.collidepoint(mouse_x, mouse_y):
+                    cycle_theme()
+                    play_sound_effect(sound_click)
 
 def display_help_screen():
     """
@@ -933,7 +1186,7 @@ def display_help_screen():
         # ---------------------------------------------------------------------
         # Title
         # ---------------------------------------------------------------------
-        render_text_centered(display, "Controls & Help", 60, FONT_TITLE, 
+        render_text_centered(display, "Controls & Help", 40, FONT_TITLE, 
                            current_theme['text_primary'])
         
         # ---------------------------------------------------------------------
@@ -943,7 +1196,8 @@ def display_help_screen():
             "",  # Spacing
             "Keyboard Controls:",
             "ESC - Return to menu / Pause game",
-            "D - Toggle dark mode on/off",
+            "D - Cycle through themes (Light/Dark/High Contrast)",
+            "S - Open accessibility settings",
             "",
             "",
             "Difficulty Progression:",
@@ -956,7 +1210,8 @@ def display_help_screen():
             "Pro Tips:",
             "• Focus on spatial patterns, not just numbers",
             "• Group numbers mentally (corners, edges, center)",
-            "• Take short breaks to maintain focus!"
+            "• Take short breaks to maintain focus!",
+            ""
         ]
         
         # Draw each line with appropriate formatting
@@ -1024,22 +1279,25 @@ def show_round_feedback(success, score, grid_size):
     - Current score
     - Preview of next difficulty level
         
+    Functions:
+        success (bool): True if round was successful, False if failed
+        score (int): Player's current score after the round
+        grid_size (int): Size of the grid used in the round just completed
+        
     Returns:
         None
         
     Display Duration:
-        Automatically closes after 2.5 seconds
+        Automatically closes after 2.0 seconds
         
     Visual Design:
         - Success: Green "Correct!" message
         - Failure: Red "Wrong!" message with encouragement
         - Shows next challenge preview for planning
-        
-    Arguments:
-        success (bool): True if round was successful, False if failed
-        score (int): Player's current score after the round
-        grid_size (int): Size of the grid used in the round just completed
     """
+    # Smooth fade transition
+    fade_transition(400)
+    
     # Clear screen
     display.fill(current_theme['background'])
     
@@ -1076,8 +1334,8 @@ def show_round_feedback(success, score, grid_size):
     # Update display to show all elements
     pygame.display.update()
     
-    # Hold screen for 2.5 seconds before continuing
-    time.sleep(2.5)
+    # Hold screen for 2.0 seconds before continuing
+    time.sleep(2.0)
 
 # =============================================================================
 # MAIN GAME LOOP
@@ -1164,6 +1422,11 @@ def main():
     """
     clock = pygame.time.Clock()
     
+    # Initial fade-in when game starts
+    display.fill((0, 0, 0))  # Start with black screen
+    pygame.display.update()
+    fade_in_screen()
+    
     # Main menu loop
     while True:
         # Show menu and get user choice
@@ -1195,5 +1458,4 @@ def main():
 # =============================================================================
 
 if __name__ == "__main__":
-   
     main()
