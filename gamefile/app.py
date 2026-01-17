@@ -1,3 +1,11 @@
+"""
+Sean Aba
+ICS4UIE-10 Computer Science Project
+January 19th, 2026
+
+"""
+
+
 import pygame
 import random
 import time
