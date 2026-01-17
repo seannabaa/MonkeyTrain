@@ -31,6 +31,14 @@ https://youtu.be/l47QNu3MEYA
 - Longer and adjusted time periods make it easier for the beginner stages to remember the n x m grid given.
 - Overall revamped from the Prototype.
 
+
+### *1.5.0 - Beta Version Update (1/17/26)
+- Updated the main user interface on the game screen: cleaner and larger UIs
+- More accessible with accessibility settings: Large Tiles, Extra Large Tiles, and Sound Effects
+- Sound effects are added, but still a work in progress
+- Added High Contrast Mode for better aesthetic and user interface accessibility
+- Fade-in between games (start, end, elims.)
+
 Your Criticism is needed! Please help me with this project. I plan to learn more every day while I build this cool project.
 
 ---
