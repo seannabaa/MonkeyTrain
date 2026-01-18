@@ -39,6 +39,10 @@ https://youtu.be/l47QNu3MEYA
 - Added High Contrast Mode for better aesthetic and user interface accessibility
 - Fade-in between games (start, end, elims.)
 
+### *1.5.1 - Beta Version Update (1/18/26)*
+- Made the game fade-in as soon as it launched
+- Changed font from Open Sans to Inter Head-font and Montserrat Sub-Font
+
 Your Criticism is needed! Please help me with this project. I plan to learn more every day while I build this cool project.
 
 ---
