@@ -43,6 +43,16 @@ https://youtu.be/l47QNu3MEYA
 - Made the game fade-in as soon as it launched
 - Changed font from Open Sans to Inter Head-font and Montserrat Sub-Font
 
+### *2.0.0 - Version 2.0 Update (1/19/26)*
+- Implemented a new “Accessibility Settings” button that accesses different aesthetic or user changes for their respective preference. Some of these accessibility features can include switching to different themes, adjusting UI sizes, sound effects, and maximizing the UI size. A descriptive summary in one sentence generalizes what each function does. 
+- In the settings bar, a setting in accessibility settings was implemented to change the sizes. The sizes can go from small (default) to large, and the largest is for the User Interface. This allows users to access different UI sizes for improved visual clarity, enabling them to see the tiles properly.
+- Implemented a proper Default Theme and Dark Theme Mode for better visual accessibility and an option for users to choose which theme suits them best for focus and overall aesthetic.
+- Implemented a high contrast mode alongside the different themes for interface elements, making it easier to see for people with low vision, colour blindness, or light sensitivity, improving legibility, reducing eye strain, and helping focus by hiding any background images or distractions.
+- Audio was added for the game: when the game presses a button, a small frequency of sound is toggled. Not an important feature, but a feature that helps with the simplicity of the game.
+- Score Tracking is updated, so when a user completes a game, the score is updated by one. When the user messes up and loses a game, the count goes to 0 and resets the entire game. Real-time feedback is also included when the numbers are clicked, showing little to no delay for each click in the game.
+
+
+
 Your Criticism is needed! Please help me with this project. I plan to learn more every day while I build this cool project.
 
 ---
